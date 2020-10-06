@@ -1,0 +1,13 @@
+C:\labs\Semest 3\Computer nets\Lab3\smtp-client-csharp\bin\Debug\netcoreapp3.1\smtp-client-csharp.exe
+C:\labs\Semest 3\Computer nets\Lab3\smtp-client-csharp\bin\Debug\netcoreapp3.1\smtp-client-csharp.deps.json
+C:\labs\Semest 3\Computer nets\Lab3\smtp-client-csharp\bin\Debug\netcoreapp3.1\smtp-client-csharp.runtimeconfig.json
+C:\labs\Semest 3\Computer nets\Lab3\smtp-client-csharp\bin\Debug\netcoreapp3.1\smtp-client-csharp.runtimeconfig.dev.json
+C:\labs\Semest 3\Computer nets\Lab3\smtp-client-csharp\bin\Debug\netcoreapp3.1\smtp-client-csharp.dll
+C:\labs\Semest 3\Computer nets\Lab3\smtp-client-csharp\bin\Debug\netcoreapp3.1\smtp-client-csharp.pdb
+C:\labs\Semest 3\Computer nets\Lab3\smtp-client-csharp\obj\Debug\netcoreapp3.1\smtp-client-csharp.csprojAssemblyReference.cache
+C:\labs\Semest 3\Computer nets\Lab3\smtp-client-csharp\obj\Debug\netcoreapp3.1\smtp-client-csharp.csproj.CoreCompileInputs.cache
+C:\labs\Semest 3\Computer nets\Lab3\smtp-client-csharp\obj\Debug\netcoreapp3.1\smtp-client-csharp.AssemblyInfoInputs.cache
+C:\labs\Semest 3\Computer nets\Lab3\smtp-client-csharp\obj\Debug\netcoreapp3.1\smtp-client-csharp.AssemblyInfo.cs
+C:\labs\Semest 3\Computer nets\Lab3\smtp-client-csharp\obj\Debug\netcoreapp3.1\smtp-client-csharp.dll
+C:\labs\Semest 3\Computer nets\Lab3\smtp-client-csharp\obj\Debug\netcoreapp3.1\smtp-client-csharp.pdb
+C:\labs\Semest 3\Computer nets\Lab3\smtp-client-csharp\obj\Debug\netcoreapp3.1\smtp-client-csharp.genruntimeconfig.cache
