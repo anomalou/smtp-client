@@ -1,69 +1,57 @@
 using System;
-using System.IO;
-using System.Net;
 using System.Text;
 using System.Net.Sockets;
 
 namespace smtp_client_csharp{
     class SMTP{
-    enum State{
-        Idle,
-        Auth,
-        AuthLogin,
-        AuthPassword,
-        MailFrom,
-        MailTo,
-        Mail,
-        Sending,
-        Shutdown
-    }
-    string hostname;
-    int port;
+        enum State{
+            Idle,
+            Auth,
+            AuthLogin,
+            AuthPassword,
+            MailFrom,
+            MailTo,
+            Mail,
+            Sending,
+            Shutdown
+        }
 
-    string username;
-    string password;
+        char[] separators;
+        string hostname;
+        int port;
 
-    string fromAddress;
-    string toAddress;
+        string username;
+        string password;
 
-    string package;
+        string fromAddress;
+        string toAddress;
 
-    Encoding UTF8;
+        string package;
 
-    Socket socket;
+        Encoding UTF8;
 
-    State socketState;
+        Socket socket;
 
-    int successCode;
+        State socketState;
+        int successCode;
+
+        bool _authorithation;
+        bool _connected;
+        public bool authorithation{get{return _authorithation;}}
+        public bool connected{get{return _connected;}}
+
         public SMTP(string hostname, int port){
             this.hostname = hostname;
             this.port = port;
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             UTF8 = Encoding.UTF8;
             socketState = State.Idle;
+            _authorithation = false;
+            _connected = false;
         }
 
-        public void SetFromAddress(string address){
-            fromAddress = address;
-        }
-
-        public void SetToAddress(string address){
-            toAddress = address;
-        }
-
-        public void Login(string username, string password){
-            this.username = username;
-            this.password = password;
-        }
-
-        public void CreateEMail(string subject, string text){
-            socketState = State.Idle;
-            package = "From: " + fromAddress + "\r\nTo: " + toAddress + "\r\nSubject: " + subject + "\r\n\n" + text;
-            Console.WriteLine("---Email created! From: " + fromAddress + " To: " + toAddress + "---\n---Connection with server estabilished!---\n");
-        }
-
-        public void Send(){
-            if(hostname != "" && port != 0 && username != "" && password != "" && fromAddress != "" && toAddress != ""){
+        public void Connect(){
+            if(hostname != "" && port != 0){
                 try{
                     socket.Connect(hostname, port);
                 }catch(Exception ex){
@@ -77,22 +65,17 @@ namespace smtp_client_csharp{
                 socket.Receive(bytePackage);
                 successCode = int.Parse(GetString(bytePackage).Split(' ', 2)[0]);
                 Console.WriteLine(GetString(bytePackage));
-                Transfer();
+                if(successCode == 220){
+                    _connected = true;
+                }else
+                    Console.WriteLine("Error!");
             }else{
-                Console.WriteLine("Error! Not all fields was not filled!\n");
+                Console.WriteLine("Error! No hostname or port!\n");
             }
         }
 
-        Byte[] GetBytes(string message){
-            return UTF8.GetBytes(message);
-        }
-
-        string GetString(Byte[] bytes){
-            return UTF8.GetString(bytes);
-        }
-
-        void Transfer(){
-            if(socketState == State.Idle && successCode == 220){
+        public void Login(string username, string password){
+            if(socketState == State.Idle && connected){
                 socket.Send(GetBytes("HELO mail.oreluniver.ru\r\n"));
                 socketState = State.Auth;
             }else if(socketState == State.Auth && successCode == 250){
@@ -104,7 +87,48 @@ namespace smtp_client_csharp{
             }else if(socketState == State.AuthPassword && successCode == 334){
                 socket.Send(GetBytes(System.Convert.ToBase64String(GetBytes(password)) + "\r\n"));
                 socketState = State.MailFrom;
-            }else if(socketState == State.MailFrom && successCode == 235){
+            }else{
+                socketState = State.Idle;
+                Disconnect();
+                Console.WriteLine("Error!");
+                return;
+            }
+
+            Byte[] bytePackage = new Byte[2048];
+            socket.Receive(bytePackage);
+            string[] output = GetString(bytePackage).Split(' ', 2);
+            successCode = int.Parse(output[0]);
+            Console.WriteLine($"{output[0]} {output[1]}");
+        
+            if(socketState == State.MailFrom && successCode == 235){
+                Console.WriteLine("Authorithated!\n");
+                this.username = username;
+                this.password = password;
+                _authorithation = true;
+            }else{
+                Login(username, password);
+            }
+        }
+
+        
+
+        public void CreateEMail(string fromAddress, string toAddress, string subject, string text){
+            this.fromAddress = fromAddress;
+            this.toAddress = toAddress;
+            package = "From: " + fromAddress + "\r\nTo: " + toAddress + "\r\nSubject: " + subject + "\r\n\n" + text;
+            Console.WriteLine("---Email created! From: " + fromAddress + " To: " + toAddress + "---");
+        }
+
+        Byte[] GetBytes(string message){
+            return UTF8.GetBytes(message);
+        }
+
+        string GetString(Byte[] bytes){
+            return UTF8.GetString(bytes);
+        }
+
+        public void Send(){
+            if(socketState == State.MailFrom && authorithation){
                 socket.Send(GetBytes("MAIL FROM:<" + fromAddress + ">\r\n"));
                 socketState = State.MailTo;
             }else if(socketState == State.MailTo && successCode == 250){
@@ -117,6 +141,9 @@ namespace smtp_client_csharp{
                 socket.Send(GetBytes(package + "\r\n.\r\n"));
                 socketState = State.Shutdown;
             }else{
+                socketState = State.MailFrom;
+                Console.WriteLine("Error!");
+                Disconnect();
                 return;   
             }
 
@@ -124,14 +151,30 @@ namespace smtp_client_csharp{
             socket.Receive(bytePackage);
             string[] output = GetString(bytePackage).Split(' ', 2);
             successCode = int.Parse(output[0]);
-            Console.WriteLine($"{output[0]} {output[1]}");
+            Console.WriteLine(GetString(bytePackage));
 
 
             if(socketState == State.Shutdown && successCode == 250){
                 Console.WriteLine("Email successfuly sent!\n");
-                socket.Close();
+                socketState = State.MailFrom;
             }else{
-                Transfer();
+                Send();
+            }
+        }
+
+        public void Disconnect(){
+            Byte[] bytes = new Byte[256];
+            if(socket.Connected){
+                socket.Send(GetBytes("QUIT\r\n"));
+                socket.Receive(bytes);
+                Console.WriteLine(GetString(bytes));
+                socket.Close();
+                _connected = false;
+                Console.WriteLine("Socket disconnected!");
+            }else if(!socket.Connected && !_connected){
+                Console.WriteLine("Error! Socket already disconnected!");
+            }else if(!socket.Connected && _connected){
+                Console.WriteLine("Error! Your socket has been disconnected by yourself!");
             }
         }
     }
